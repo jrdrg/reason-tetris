@@ -16,11 +16,19 @@ type currentPieceState =
   | None
   | Moving Types.direction
   | Dropping;
-  
+
+
+type activePiece = {
+    shape: Tetromino.tetrominoShape,
+    state: currentPieceState,
+    offsetX: int,
+    offsetY: int
+};
+
 type state = {
     tick: int,
     board: list Types.gridSquare,
-    activeShape: option (Tetromino.tetrominoShape, currentPieceState)
+    activePiece: option activePiece
 };
 
 
@@ -45,16 +53,16 @@ let newShape () => {
 };
 
 let handleTick state => {
-    switch state.activeShape {
+    switch state.activePiece {
     | Some shape => {
         Js.log ("Active shape", shape);
         ReasonReact.Update {...state, tick: state.tick + 1}
     }
     | None => {
         let shape = newShape ();
-        let activeShape = Some (shape, None);
-        Js.log ("Creating active shape", activeShape);
-        ReasonReact.Update {...state, tick: state.tick + 2, activeShape}
+        let activePiece = Some {shape, state: None, offsetX: 0, offsetY: 0};
+        Js.log ("Creating active shape", activePiece);
+        ReasonReact.Update {...state, tick: state.tick + 2, activePiece}
     }
     }
 };
@@ -76,7 +84,7 @@ let component = ReasonReact.reducerComponent "GameBoard";
 
 let make _children => {
     ...component,
-    initialState: fun () => {tick: 0, board: [], activeShape: None},
+    initialState: fun () => {tick: 0, board: [], activePiece: None},
     reducer: fun action state => {
         switch action {
         | Move direction => handleMove direction state

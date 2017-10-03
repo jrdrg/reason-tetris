@@ -29302,7 +29302,7 @@
 	}
 
 	function handleTick(state) {
-	  var match = state[/* activeShape */2];
+	  var match = state[/* activePiece */2];
 	  if (match) {
 	    console.log(/* tuple */[
 	          "Active shape",
@@ -29311,22 +29311,24 @@
 	    return /* Update */Block.__(0, [/* record */[
 	                /* tick */state[/* tick */0] + 1 | 0,
 	                /* board */state[/* board */1],
-	                /* activeShape */state[/* activeShape */2]
+	                /* activePiece */state[/* activePiece */2]
 	              ]]);
 	  } else {
 	    var shape = newShape(/* () */0);
-	    var activeShape = /* Some */[/* tuple */[
-	        shape,
-	        /* None */0
+	    var activePiece = /* Some */[/* record */[
+	        /* shape */shape,
+	        /* state : None */0,
+	        /* offsetX */0,
+	        /* offsetY */0
 	      ]];
 	    console.log(/* tuple */[
 	          "Creating active shape",
-	          activeShape
+	          activePiece
 	        ]);
 	    return /* Update */Block.__(0, [/* record */[
 	                /* tick */state[/* tick */0] + 2 | 0,
 	                /* board */state[/* board */1],
-	                /* activeShape */activeShape
+	                /* activePiece */activePiece
 	              ]]);
 	  }
 	}
@@ -29354,7 +29356,7 @@
 	      return /* record */[
 	              /* tick */0,
 	              /* board : [] */0,
-	              /* activeShape : None */0
+	              /* activePiece : None */0
 	            ];
 	    });
 	  newrecord[/* reducer */12] = (function (action, state) {
