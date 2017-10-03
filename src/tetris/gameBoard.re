@@ -4,16 +4,18 @@ Js.log ("Seed", seed);
 Random.init(seed);
 
 type action =
+  | NoOp
   | Tick
   | Move Types.direction
   | Drop
+  | KeyUp
   | RotateLeft
   | RotateRight
   | GameOver
   | Restart;
 
 type currentPieceState =
-  | None
+  | NoInput
   | Moving Types.direction
   | Dropping;
 
@@ -54,20 +56,18 @@ let newShape () => {
 
 let handleTick state => {
     switch state.activePiece {
-    | Some shape => {
-        Js.log ("Active shape", shape);
+    | Some _ => 
         ReasonReact.Update {...state, tick: state.tick + 1}
-    }
-    | None => {
+    | None => 
         let shape = newShape ();
-        let activePiece = Some {shape, state: None, offsetX: 0, offsetY: 0};
+        let activePiece = Some {shape, state: NoInput, offsetX: 0, offsetY: 0};
         Js.log ("Creating active shape", activePiece);
         ReasonReact.Update {...state, tick: state.tick + 2, activePiece}
-    }
     }
 };
 
 let handleMove direction state => {
+    Js.log ("Moving ", direction);
     Types.(
         switch direction {
         | Up => ReasonReact.Update state
@@ -78,6 +78,42 @@ let handleMove direction state => {
     )
 };
 
+let handleDrop state => {
+    Js.log "Dropping active piece";
+    switch state.activePiece {
+    | Some activePiece =>
+        ReasonReact.Update {...state, activePiece: Some {...activePiece, state: Dropping}}
+    | None =>
+        ReasonReact.Update state
+    }
+};
+
+let handleKeyUp state => {
+    Js.log "Key up";
+    switch state.activePiece {
+    | Some activePiece =>
+        ReasonReact.Update {...state, activePiece: Some {...activePiece, state: NoInput}}
+    | None =>
+        ReasonReact.Update state
+    }
+};
+
+let addEventListener: string => (ReactEventRe.Keyboard.t => unit) => unit = [%bs.raw {|
+    function(event, handler) {
+        window.addEventListener(event, handler);
+    }
+|}];
+
+let removeEventListener: string => (ReactEventRe.Keyboard.t => unit) => unit = [%bs.raw {|
+    function(event, handler) {
+        window.removeEventListener(event, handler);
+    }    
+|}];
+
+
+let handleKeyDown (event: ReactEventRe.Keyboard.t) => {
+    Js.log ("KEYDOWN", event |> ReactEventRe.Keyboard.keyCode)
+};
 
 /* Component */
 let component = ReasonReact.reducerComponent "GameBoard";
@@ -88,14 +124,36 @@ let make _children => {
     reducer: fun action state => {
         switch action {
         | Move direction => handleMove direction state
+        | KeyUp => handleKeyUp state
         | Tick => handleTick state
         | _ => ReasonReact.Update state
         }
     },
     didMount: fun self => {
         let _id = Js.Global.setInterval(self.reduce (fun _ => Tick)) 1000;
+
+        addEventListener "keydown" (fun event => {
+            let keyCode = event |> ReactEventRe.Keyboard.keyCode;
+            Js.log ("Keydown", keyCode);
+            self.reduce(fun _ => {
+                switch keyCode {
+                | 37 => Move Left
+                | 39 => Move Right
+                | 40 => Drop
+                | _ => NoOp
+                }
+            }) ();
+        });
+
+        addEventListener "keyup" (fun _ => {
+            self.reduce(fun _ => KeyUp) ()
+        });
+
         ReasonReact.NoUpdate;
     },
+    /*willUnmount: fun _ => {
+        removeEventListener "keydown" handleKeyDown
+    },*/
     render: fun {state} => {
         <div style={boardStyle}>
             {state.tick |> string_of_int |> ReasonReact.stringToElement}

@@ -29304,10 +29304,6 @@
 	function handleTick(state) {
 	  var match = state[/* activePiece */2];
 	  if (match) {
-	    console.log(/* tuple */[
-	          "Active shape",
-	          match[0]
-	        ]);
 	    return /* Update */Block.__(0, [/* record */[
 	                /* tick */state[/* tick */0] + 1 | 0,
 	                /* board */state[/* board */1],
@@ -29317,7 +29313,7 @@
 	    var shape = newShape(/* () */0);
 	    var activePiece = /* Some */[/* record */[
 	        /* shape */shape,
-	        /* state : None */0,
+	        /* state : NoInput */0,
 	        /* offsetX */0,
 	        /* offsetY */0
 	      ]];
@@ -29333,8 +29329,72 @@
 	  }
 	}
 
-	function handleMove(_, state) {
+	function handleMove(direction, state) {
+	  console.log(/* tuple */[
+	        "Moving ",
+	        direction
+	      ]);
 	  return /* Update */Block.__(0, [state]);
+	}
+
+	function handleDrop(state) {
+	  console.log("Dropping active piece");
+	  var match = state[/* activePiece */2];
+	  if (match) {
+	    var activePiece = match[0];
+	    return /* Update */Block.__(0, [/* record */[
+	                /* tick */state[/* tick */0],
+	                /* board */state[/* board */1],
+	                /* activePiece : Some */[/* record */[
+	                    /* shape */activePiece[/* shape */0],
+	                    /* state : Dropping */1,
+	                    /* offsetX */activePiece[/* offsetX */2],
+	                    /* offsetY */activePiece[/* offsetY */3]
+	                  ]]
+	              ]]);
+	  } else {
+	    return /* Update */Block.__(0, [state]);
+	  }
+	}
+
+	function handleKeyUp(state) {
+	  console.log("Key up");
+	  var match = state[/* activePiece */2];
+	  if (match) {
+	    var activePiece = match[0];
+	    return /* Update */Block.__(0, [/* record */[
+	                /* tick */state[/* tick */0],
+	                /* board */state[/* board */1],
+	                /* activePiece : Some */[/* record */[
+	                    /* shape */activePiece[/* shape */0],
+	                    /* state : NoInput */0,
+	                    /* offsetX */activePiece[/* offsetX */2],
+	                    /* offsetY */activePiece[/* offsetY */3]
+	                  ]]
+	              ]]);
+	  } else {
+	    return /* Update */Block.__(0, [state]);
+	  }
+	}
+
+	var addEventListener = (
+	    function(event, handler) {
+	        window.addEventListener(event, handler);
+	    }
+	);
+
+	var removeEventListener = (
+	    function(event, handler) {
+	        window.removeEventListener(event, handler);
+	    }    
+	);
+
+	function handleKeyDown($$event) {
+	  console.log(/* tuple */[
+	        "KEYDOWN",
+	        $$event.keyCode
+	      ]);
+	  return /* () */0;
 	}
 
 	var component = ReasonReact.reducerComponent("GameBoard");
@@ -29343,8 +29403,38 @@
 	  var newrecord = component.slice();
 	  newrecord[/* didMount */4] = (function (self) {
 	      setInterval(Curry._1(self[/* reduce */3], (function () {
-	                  return /* Tick */0;
+	                  return /* Tick */1;
 	                })), 1000);
+	      Curry._2(addEventListener, "keydown", (function ($$event) {
+	              var keyCode = $$event.keyCode;
+	              console.log(/* tuple */[
+	                    "Keydown",
+	                    keyCode
+	                  ]);
+	              return Curry._2(self[/* reduce */3], (function () {
+	                            var switcher = keyCode - 37 | 0;
+	                            if (switcher > 3 || switcher < 0) {
+	                              return /* NoOp */0;
+	                            } else {
+	                              switch (switcher) {
+	                                case 0 : 
+	                                    return /* Move */[/* Left */1];
+	                                case 1 : 
+	                                    return /* NoOp */0;
+	                                case 2 : 
+	                                    return /* Move */[/* Right */3];
+	                                case 3 : 
+	                                    return /* Drop */2;
+	                                
+	                              }
+	                            }
+	                          }), /* () */0);
+	            }));
+	      Curry._2(addEventListener, "keyup", (function () {
+	              return Curry._2(self[/* reduce */3], (function () {
+	                            return /* KeyUp */3;
+	                          }), /* () */0);
+	            }));
 	      return /* NoUpdate */0;
 	    });
 	  newrecord[/* render */9] = (function (param) {
@@ -29361,25 +29451,39 @@
 	    });
 	  newrecord[/* reducer */12] = (function (action, state) {
 	      if (typeof action === "number") {
-	        if (action !== 0) {
+	        var switcher = action - 1 | 0;
+	        if (switcher > 2 || switcher < 0) {
 	          return /* Update */Block.__(0, [state]);
 	        } else {
-	          return handleTick(state);
+	          switch (switcher) {
+	            case 0 : 
+	                return handleTick(state);
+	            case 1 : 
+	                return /* Update */Block.__(0, [state]);
+	            case 2 : 
+	                return handleKeyUp(state);
+	            
+	          }
 	        }
 	      } else {
-	        return /* Update */Block.__(0, [state]);
+	        return handleMove(action[0], state);
 	      }
 	    });
 	  return newrecord;
 	}
 
-	exports.seed       = seed;
-	exports.boardStyle = boardStyle;
-	exports.newShape   = newShape;
-	exports.handleTick = handleTick;
-	exports.handleMove = handleMove;
-	exports.component  = component;
-	exports.make       = make;
+	exports.seed                = seed;
+	exports.boardStyle          = boardStyle;
+	exports.newShape            = newShape;
+	exports.handleTick          = handleTick;
+	exports.handleMove          = handleMove;
+	exports.handleDrop          = handleDrop;
+	exports.handleKeyUp         = handleKeyUp;
+	exports.addEventListener    = addEventListener;
+	exports.removeEventListener = removeEventListener;
+	exports.handleKeyDown       = handleKeyDown;
+	exports.component           = component;
+	exports.make                = make;
 	/* seed Not a pure module */
 
 
