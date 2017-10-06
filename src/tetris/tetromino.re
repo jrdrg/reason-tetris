@@ -26,10 +26,34 @@ let shapeToGrid shape =>
     }
   );
 
+let toPx num => {
+    string_of_int num ^ "px"
+};
+
 let component = ReasonReact.statelessComponent "Tetromino";
 
-let make _children => {
-  ...component,
-  render: fun _ => 
-    <div> (ReasonReact.stringToElement "test") </div>
+let make ::shape ::offsetX ::offsetY _children => {
+    let px = offsetX * Constants.tileSize;
+    let py = offsetY * Constants.tileSize;
+
+    let tilePositionStyle x y => {
+        ReactDOMRe.Style.make
+            position::"absolute"
+            border::"1px solid black"
+            boxSizing::"border-box"
+            backgroundColor::"red"
+            height::(Constants.tileSize |> toPx)
+            width::(Constants.tileSize |> toPx)
+            top::((y + py) |> toPx)
+            left::((x + px) |> toPx)
+            ()
+    };
+
+  /*let blocks = shapeToGrid shape;*/
+
+  {
+    ...component,
+    render: fun _ => 
+      <div style={tilePositionStyle 0 0}> </div>
+  }
 };

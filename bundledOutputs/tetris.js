@@ -52,7 +52,7 @@
 	var Elements$Tetris  = __webpack_require__(204);
 	var GameBoard$Tetris = __webpack_require__(205);
 
-	var component = ReasonReact.statelessComponent("Stuff");
+	var component = ReasonReact.statelessComponent("Container");
 
 	function make(header, _) {
 	  var newrecord = component.slice();
@@ -29275,6 +29275,7 @@
 	var Pervasives       = __webpack_require__(191);
 	var ReasonReact      = __webpack_require__(186);
 	var Constants$Tetris = __webpack_require__(218);
+	var Tetromino$Tetris = __webpack_require__(219);
 
 	var seed = (parseInt(Math.random() * Number.MAX_SAFE_INTEGER));
 
@@ -29289,6 +29290,7 @@
 	  border: "1px solid black",
 	  height: Pervasives.string_of_int(Caml_int32.imul(Constants$Tetris.boardSize[/* height */0], Constants$Tetris.tileSize)) + "px",
 	  margin: "auto",
+	  position: "relative",
 	  width: Pervasives.string_of_int(Caml_int32.imul(Constants$Tetris.boardSize[/* width */1], Constants$Tetris.tileSize)) + "px"
 	};
 
@@ -29301,13 +29303,79 @@
 	  }
 	}
 
+	function updateOffsets($staropt$star, $staropt$star$1, piece) {
+	  var x = $staropt$star ? $staropt$star[0] : 0;
+	  var y = $staropt$star$1 ? $staropt$star$1[0] : 0;
+	  return /* record */[
+	          /* shape */piece[/* shape */0],
+	          /* state */piece[/* state */1],
+	          /* offsetX */piece[/* offsetX */2] + x | 0,
+	          /* offsetY */piece[/* offsetY */3] + y | 0
+	        ];
+	}
+
+	function stayWithinBounds(piece) {
+	  var offsetX = Pervasives.max(0, Pervasives.min(Constants$Tetris.boardSize[/* width */1] - 1 | 0, piece[/* offsetX */2]));
+	  var offsetY = Pervasives.max(0, Pervasives.min(Constants$Tetris.boardSize[/* height */0] - 1 | 0, piece[/* offsetY */3]));
+	  return /* record */[
+	          /* shape */piece[/* shape */0],
+	          /* state */piece[/* state */1],
+	          /* offsetX */offsetX,
+	          /* offsetY */offsetY
+	        ];
+	}
+
 	function handleTick(state) {
 	  var match = state[/* activePiece */2];
 	  if (match) {
+	    var piece = match[0];
+	    var match$1 = piece[/* state */1];
+	    var movedPiece;
+	    if (typeof match$1 === "number") {
+	      if (match$1 !== 0) {
+	        var partial_arg = /* Some */[1];
+	        movedPiece = (function (param) {
+	              return updateOffsets(/* None */0, partial_arg, param);
+	            })(piece);
+	      } else {
+	        movedPiece = piece;
+	      }
+	    } else {
+	      var direction = match$1[0];
+	      if (direction !== 0) {
+	        switch (direction - 1 | 0) {
+	          case 0 : 
+	              var partial_arg$1 = /* Some */[-1];
+	              movedPiece = (function (eta) {
+	                    var param = /* None */0;
+	                    var param$1 = eta;
+	                    return updateOffsets(partial_arg$1, param, param$1);
+	                  })(piece);
+	              break;
+	          case 1 : 
+	              movedPiece = piece;
+	              break;
+	          case 2 : 
+	              var partial_arg$2 = /* Some */[1];
+	              movedPiece = (function (eta) {
+	                    var param = /* None */0;
+	                    var param$1 = eta;
+	                    return updateOffsets(partial_arg$2, param, param$1);
+	                  })(piece);
+	              break;
+	          
+	        }
+	      } else {
+	        movedPiece = piece;
+	      }
+	    }
+	    var partial_arg$3 = /* Some */[1];
 	    return /* Update */Block.__(0, [/* record */[
 	                /* tick */state[/* tick */0] + 1 | 0,
 	                /* board */state[/* board */1],
-	                /* activePiece */state[/* activePiece */2]
+	                /* activePiece : Some */[stayWithinBounds((function (param) {
+	                            return updateOffsets(/* None */0, partial_arg$3, param);
+	                          })(movedPiece))]
 	              ]]);
 	  } else {
 	    var shape = newShape(/* () */0);
@@ -29329,52 +29397,57 @@
 	  }
 	}
 
+	function updateActivePieceState(state, pieceState) {
+	  console.log(/* tuple */[
+	        "Updating active piece state",
+	        pieceState
+	      ]);
+	  var activePiece = state[/* activePiece */2];
+	  if (activePiece) {
+	    var piece = activePiece[0];
+	    return /* record */[
+	            /* tick */state[/* tick */0],
+	            /* board */state[/* board */1],
+	            /* activePiece : Some */[/* record */[
+	                /* shape */piece[/* shape */0],
+	                /* state */pieceState,
+	                /* offsetX */piece[/* offsetX */2],
+	                /* offsetY */piece[/* offsetY */3]
+	              ]]
+	          ];
+	  } else {
+	    return state;
+	  }
+	}
+
 	function handleMove(direction, state) {
 	  console.log(/* tuple */[
 	        "Moving ",
 	        direction
 	      ]);
-	  return /* Update */Block.__(0, [state]);
+	  if (direction !== 0) {
+	    switch (direction - 1 | 0) {
+	      case 0 : 
+	          return /* Update */Block.__(0, [updateActivePieceState(state, /* Moving */[/* Left */1])]);
+	      case 1 : 
+	          return /* Update */Block.__(0, [state]);
+	      case 2 : 
+	          return /* Update */Block.__(0, [updateActivePieceState(state, /* Moving */[/* Right */3])]);
+	      
+	    }
+	  } else {
+	    return /* Update */Block.__(0, [state]);
+	  }
 	}
 
 	function handleDrop(state) {
 	  console.log("Dropping active piece");
-	  var match = state[/* activePiece */2];
-	  if (match) {
-	    var activePiece = match[0];
-	    return /* Update */Block.__(0, [/* record */[
-	                /* tick */state[/* tick */0],
-	                /* board */state[/* board */1],
-	                /* activePiece : Some */[/* record */[
-	                    /* shape */activePiece[/* shape */0],
-	                    /* state : Dropping */1,
-	                    /* offsetX */activePiece[/* offsetX */2],
-	                    /* offsetY */activePiece[/* offsetY */3]
-	                  ]]
-	              ]]);
-	  } else {
-	    return /* Update */Block.__(0, [state]);
-	  }
+	  return /* Update */Block.__(0, [updateActivePieceState(state, /* Dropping */1)]);
 	}
 
 	function handleKeyUp(state) {
 	  console.log("Key up");
-	  var match = state[/* activePiece */2];
-	  if (match) {
-	    var activePiece = match[0];
-	    return /* Update */Block.__(0, [/* record */[
-	                /* tick */state[/* tick */0],
-	                /* board */state[/* board */1],
-	                /* activePiece : Some */[/* record */[
-	                    /* shape */activePiece[/* shape */0],
-	                    /* state : NoInput */0,
-	                    /* offsetX */activePiece[/* offsetX */2],
-	                    /* offsetY */activePiece[/* offsetY */3]
-	                  ]]
-	              ]]);
-	  } else {
-	    return /* Update */Block.__(0, [state]);
-	  }
+	  return /* Update */Block.__(0, [updateActivePieceState(state, /* NoInput */0)]);
 	}
 
 	var addEventListener = (
@@ -29386,16 +29459,8 @@
 	var removeEventListener = (
 	    function(event, handler) {
 	        window.removeEventListener(event, handler);
-	    }    
+	    }
 	);
-
-	function handleKeyDown($$event) {
-	  console.log(/* tuple */[
-	        "KEYDOWN",
-	        $$event.keyCode
-	      ]);
-	  return /* () */0;
-	}
 
 	var component = ReasonReact.reducerComponent("GameBoard");
 
@@ -29404,7 +29469,7 @@
 	  newrecord[/* didMount */4] = (function (self) {
 	      setInterval(Curry._1(self[/* reduce */3], (function () {
 	                  return /* Tick */1;
-	                })), 1000);
+	                })), 500);
 	      Curry._2(addEventListener, "keydown", (function ($$event) {
 	              var keyCode = $$event.keyCode;
 	              console.log(/* tuple */[
@@ -29438,9 +29503,18 @@
 	      return /* NoUpdate */0;
 	    });
 	  newrecord[/* render */9] = (function (param) {
+	      var match = param[/* state */4];
+	      var activePiece = match[/* activePiece */2];
+	      var tmp;
+	      if (activePiece) {
+	        var match$1 = activePiece[0];
+	        tmp = ReasonReact.element(/* None */0, /* None */0, Tetromino$Tetris.make(match$1[/* shape */0], match$1[/* offsetX */2], match$1[/* offsetY */3], /* array */[]));
+	      } else {
+	        tmp = null;
+	      }
 	      return React.createElement("div", {
 	                  style: boardStyle
-	                }, Pervasives.string_of_int(param[/* state */4][/* tick */0]));
+	                }, Pervasives.string_of_int(match[/* tick */0]), tmp);
 	    });
 	  newrecord[/* initialState */10] = (function () {
 	      return /* record */[
@@ -29451,19 +29525,20 @@
 	    });
 	  newrecord[/* reducer */12] = (function (action, state) {
 	      if (typeof action === "number") {
-	        var switcher = action - 1 | 0;
-	        if (switcher > 2 || switcher < 0) {
-	          return /* Update */Block.__(0, [state]);
-	        } else {
-	          switch (switcher) {
-	            case 0 : 
-	                return handleTick(state);
-	            case 1 : 
-	                return /* Update */Block.__(0, [state]);
-	            case 2 : 
-	                return handleKeyUp(state);
-	            
-	          }
+	        switch (action) {
+	          case 1 : 
+	              return handleTick(state);
+	          case 2 : 
+	              return handleDrop(state);
+	          case 3 : 
+	              return handleKeyUp(state);
+	          case 0 : 
+	          case 4 : 
+	          case 5 : 
+	          case 6 : 
+	          case 7 : 
+	              return /* Update */Block.__(0, [state]);
+	          
 	        }
 	      } else {
 	        return handleMove(action[0], state);
@@ -29472,18 +29547,20 @@
 	  return newrecord;
 	}
 
-	exports.seed                = seed;
-	exports.boardStyle          = boardStyle;
-	exports.newShape            = newShape;
-	exports.handleTick          = handleTick;
-	exports.handleMove          = handleMove;
-	exports.handleDrop          = handleDrop;
-	exports.handleKeyUp         = handleKeyUp;
-	exports.addEventListener    = addEventListener;
-	exports.removeEventListener = removeEventListener;
-	exports.handleKeyDown       = handleKeyDown;
-	exports.component           = component;
-	exports.make                = make;
+	exports.seed                   = seed;
+	exports.boardStyle             = boardStyle;
+	exports.newShape               = newShape;
+	exports.updateOffsets          = updateOffsets;
+	exports.stayWithinBounds       = stayWithinBounds;
+	exports.handleTick             = handleTick;
+	exports.updateActivePieceState = updateActivePieceState;
+	exports.handleMove             = handleMove;
+	exports.handleDrop             = handleDrop;
+	exports.handleKeyUp            = handleKeyUp;
+	exports.addEventListener       = addEventListener;
+	exports.removeEventListener    = removeEventListener;
+	exports.component              = component;
+	exports.make                   = make;
 	/* seed Not a pure module */
 
 
@@ -31781,6 +31858,217 @@
 	exports.tileSize  = tileSize;
 	exports.boardSize = boardSize;
 	/* No side effect */
+
+
+/***/ }),
+/* 219 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	// Generated by BUCKLESCRIPT VERSION 1.9.3, PLEASE EDIT WITH CARE
+	'use strict';
+
+	var React            = __webpack_require__(202);
+	var Caml_int32       = __webpack_require__(195);
+	var Pervasives       = __webpack_require__(191);
+	var ReasonReact      = __webpack_require__(186);
+	var Constants$Tetris = __webpack_require__(218);
+
+	function shapeToGrid(shape) {
+	  switch (shape) {
+	    case 0 : 
+	        return /* :: */[
+	                /* Block */0,
+	                /* :: */[
+	                  /* Block */0,
+	                  /* :: */[
+	                    /* Empty */1,
+	                    /* :: */[
+	                      /* Empty */1,
+	                      /* :: */[
+	                        /* Block */0,
+	                        /* :: */[
+	                          /* Block */0,
+	                          /* :: */[
+	                            /* Empty */1,
+	                            /* :: */[
+	                              /* Empty */1,
+	                              /* :: */[
+	                                /* Empty */1,
+	                                /* :: */[
+	                                  /* Empty */1,
+	                                  /* :: */[
+	                                    /* Empty */1,
+	                                    /* :: */[
+	                                      /* Empty */1,
+	                                      /* :: */[
+	                                        /* Empty */1,
+	                                        /* :: */[
+	                                          /* Empty */1,
+	                                          /* :: */[
+	                                            /* Empty */1,
+	                                            /* :: */[
+	                                              /* Empty */1,
+	                                              /* [] */0
+	                                            ]
+	                                          ]
+	                                        ]
+	                                      ]
+	                                    ]
+	                                  ]
+	                                ]
+	                              ]
+	                            ]
+	                          ]
+	                        ]
+	                      ]
+	                    ]
+	                  ]
+	                ]
+	              ];
+	    case 1 : 
+	        return /* :: */[
+	                /* Block */0,
+	                /* :: */[
+	                  /* Block */0,
+	                  /* :: */[
+	                    /* Empty */1,
+	                    /* :: */[
+	                      /* Empty */1,
+	                      /* :: */[
+	                        /* Empty */1,
+	                        /* :: */[
+	                          /* Block */0,
+	                          /* :: */[
+	                            /* Block */0,
+	                            /* :: */[
+	                              /* Empty */1,
+	                              /* :: */[
+	                                /* Empty */1,
+	                                /* :: */[
+	                                  /* Empty */1,
+	                                  /* :: */[
+	                                    /* Empty */1,
+	                                    /* :: */[
+	                                      /* Empty */1,
+	                                      /* :: */[
+	                                        /* Empty */1,
+	                                        /* :: */[
+	                                          /* Empty */1,
+	                                          /* :: */[
+	                                            /* Empty */1,
+	                                            /* :: */[
+	                                              /* Empty */1,
+	                                              /* [] */0
+	                                            ]
+	                                          ]
+	                                        ]
+	                                      ]
+	                                    ]
+	                                  ]
+	                                ]
+	                              ]
+	                            ]
+	                          ]
+	                        ]
+	                      ]
+	                    ]
+	                  ]
+	                ]
+	              ];
+	    case 2 : 
+	        return /* :: */[
+	                /* Empty */1,
+	                /* :: */[
+	                  /* Empty */1,
+	                  /* :: */[
+	                    /* Block */0,
+	                    /* :: */[
+	                      /* Block */0,
+	                      /* :: */[
+	                        /* Empty */1,
+	                        /* :: */[
+	                          /* Block */0,
+	                          /* :: */[
+	                            /* Block */0,
+	                            /* :: */[
+	                              /* Empty */1,
+	                              /* :: */[
+	                                /* Empty */1,
+	                                /* :: */[
+	                                  /* Empty */1,
+	                                  /* :: */[
+	                                    /* Empty */1,
+	                                    /* :: */[
+	                                      /* Empty */1,
+	                                      /* :: */[
+	                                        /* Empty */1,
+	                                        /* :: */[
+	                                          /* Empty */1,
+	                                          /* :: */[
+	                                            /* Empty */1,
+	                                            /* :: */[
+	                                              /* Empty */1,
+	                                              /* [] */0
+	                                            ]
+	                                          ]
+	                                        ]
+	                                      ]
+	                                    ]
+	                                  ]
+	                                ]
+	                              ]
+	                            ]
+	                          ]
+	                        ]
+	                      ]
+	                    ]
+	                  ]
+	                ]
+	              ];
+	    case 3 : 
+	    case 4 : 
+	    case 5 : 
+	    case 6 : 
+	        return /* [] */0;
+	    
+	  }
+	}
+
+	function toPx(num) {
+	  return Pervasives.string_of_int(num) + "px";
+	}
+
+	var component = ReasonReact.statelessComponent("Tetromino");
+
+	function make(_, offsetX, offsetY, _$1) {
+	  var px = Caml_int32.imul(offsetX, Constants$Tetris.tileSize);
+	  var py = Caml_int32.imul(offsetY, Constants$Tetris.tileSize);
+	  var tilePositionStyle = function (x, y) {
+	    return {
+	            backgroundColor: "red",
+	            border: "1px solid black",
+	            height: Pervasives.string_of_int(Constants$Tetris.tileSize) + "px",
+	            left: Pervasives.string_of_int(x + px | 0) + "px",
+	            position: "absolute",
+	            top: Pervasives.string_of_int(y + py | 0) + "px",
+	            width: Pervasives.string_of_int(Constants$Tetris.tileSize) + "px",
+	            boxSizing: "border-box"
+	          };
+	  };
+	  var newrecord = component.slice();
+	  newrecord[/* render */9] = (function () {
+	      return React.createElement("div", {
+	                  style: tilePositionStyle(0, 0)
+	                });
+	    });
+	  return newrecord;
+	}
+
+	exports.shapeToGrid = shapeToGrid;
+	exports.toPx        = toPx;
+	exports.component   = component;
+	exports.make        = make;
+	/* component Not a pure module */
 
 
 /***/ })
