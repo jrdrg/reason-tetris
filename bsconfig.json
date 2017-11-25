@@ -5,12 +5,17 @@
 {
   "name" : "tetris",
   "reason" : {"react-jsx" : 2},
-  "bs-dependencies": ["reason-react"],
+  "bs-dependencies": ["reason-react", "bs-jest"],
   "sources": [
     {
       "dir": "src",
       "subdirs": ["tetris"]
+    },
+    {
+      "dir": "__tests__",
+      "type": "dev"
     }
   ],
+  "refmt": 3,
   "namespace": true
 }

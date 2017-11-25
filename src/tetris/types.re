@@ -1,4 +1,3 @@
-
 type direction =
   | Up
   | Left
